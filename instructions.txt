@@ -1,0 +1,21 @@
+00000 ADD  Rd, Rs1, Rs2         Addition
+00001 ADC  Rd, Rs1, Rs2         Addition with carry
+00010 SUB  Rd, Rs1, Rs2         Subtraction
+00011 SBB  Rd, Rs1, Rs2         Subtraction with borrow
+00100 MUL  Rd1, Rd2, Rs1, Rs2   Multiplication
+00101 FPA  Rd, Rs1, Rs2         Floating Addition
+00110 FAC  Rd, Rs1, Rs2         Floating Addition with carry
+00111 FPS  Rd, Rs1, Rs2         Floating Subtraction
+01000 FSB  Rd, Rs1, Rs2         Floating Subtraction with borrow
+01001 FPM  Rd, Rs1, Rs2         Floating Multiplication
+01010 AND  Rd, Rs1, Rs2         Bitwise AND
+01011 OR   Rd, Rs1, Rs2         Bitwise OR
+01100 XOR  Rd, Rs1, Rs2         Bitwise XOR
+01101 NAND Rd, Rs1, Rs2         Bitwise NAND
+01110 NOR  Rd, Rs1, Rs2         Bitwise NOR
+01111 XNOR Rd, Rs1, Rs2         Bitwise XNOR
+10000 NOT  Rd, Rs1, Rs2         Bitwise NOT
+10001 TCM  Rd, Rs1, Rs2         2s Complement
+10010 LDR  Rd, Rs1, Rs2         Load
+10011 STR  Rd, Rs1, Rs2         Store
+11111 HLT  Rd, Rs1, Rs2         Halt
