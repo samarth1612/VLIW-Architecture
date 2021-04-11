@@ -3,7 +3,11 @@ def getOPCode():
         data = op.readlines()
     opCodes = {}
     for s in data:
+        if s is None:
+            continue
         t = s.split()
+        if t[0] == "//":
+            continue
         opCodes[t[1]] = t[0]
     return opCodes
 
@@ -26,3 +30,6 @@ class Parser:
             for i in range(1, len(y), 1):
                 j.append(y[i])
             self.data.append(j)
+
+    def createPackets(self):
+        pass
