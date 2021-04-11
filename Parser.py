@@ -32,4 +32,5 @@ class Parser:
             self.data.append(j)
 
     def createPackets(self):
+        print(self.data)
         pass
