@@ -16,9 +16,10 @@
 01101 NAND Rd, Rs1, Rs2         Bitwise NAND
 01110 NOR  Rd, Rs1, Rs2         Bitwise NOR
 01111 XNOR Rd, Rs1, Rs2         Bitwise XNOR
-10000 NOT  Rd, Rs1, Rs2         Bitwise NOT
-10001 TCM  Rd, Rs1, Rs2         2s Complement
+10000 NOT  Rd, Rs1              Bitwise NOT
+10001 TCM  Rd, Rs1              2s Complement
 // Memory Instructions
 10010 LDR  Rd, Rs               Load
 10011 STR  Rd, Rs               Store
+10100 MOV  Rd, num              Move
 11111 HLT                       Halt
