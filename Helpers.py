@@ -35,7 +35,10 @@ def packetDict():
         "fadd0": [],
         "fadd1": [],
         "fmul": [],
-        "logic": []
+        "logic": [],
+        "ldr": [],
+        "str": [],
+        "mov": []
     }
 
 
@@ -59,6 +62,12 @@ def getPacketKey(opCode):
         return "fmul", None
     elif opCode in ["01010", "01011", "01100", "01101", "01110", "01111", "10000", "10001"]:
         return "logic", None
+    elif opCode == "10010":
+        return "ldr", None
+    elif opCode == "10011":
+        return "str", None
+    elif opCode == "10100":
+        return "mov", None
 
 
 def checkRAW(packet, inst):
@@ -83,6 +92,39 @@ def checkRAW(packet, inst):
         else:
             if y[1] in [op_1, op_2]:
                 return True
+    return False
+
+
+def checkWAR(packet, inst):
+    """
+    Checks the WAR data dependencies in the given packet of instructions
+
+    Input: 
+    - packet: Instruction packet for dependency check 
+    - inst: Next upcoming instruction
+
+    Output:
+    - True if there is a WAR data dependency 
+    - False if there is no WAR data dependency
+    """
+    out_1, out_2 = getOutput(inst)
+    for y in packet.values():
+        if not y:
+            continue
+        if y[0] == "00100":
+            if inst[0] == "00100":
+                if y[3] in [out_1, out_2] or y[4] in [out_1, out_2]:
+                    return True
+            else:
+                if y[3] == out_1 or y[4] == out_1:
+                    return True
+        else:
+            if inst[0] == "00100":
+                if y[2] in [out_1, out_2] or y[3] in [out_1, out_2]:
+                    return True
+            else:
+                if y[2] == out_1 or y[3] == out_1:
+                    return True
     return False
 
 
@@ -236,5 +278,14 @@ def addInst(packet, packetKey, optionalKey, data):
         if not packet[optionalKey]:
             if not checkRAW(packet, data) and not checkWAW(packet, data):
                 packet[optionalKey] = data
+                return True
+    return False
+
+
+def check(pack, inst):
+    inst_key = getPacketKey(inst[0])
+    for key in inst_key:
+        if key:
+            if pack[key] == inst:
                 return True
     return False

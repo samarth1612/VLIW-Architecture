@@ -31,3 +31,6 @@
 
 // Register file
 `include "REG FILE\RegisterFile.v"
+
+// Memory file
+`include "MEM\memory.v"

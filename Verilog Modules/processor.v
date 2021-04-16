@@ -3,5 +3,6 @@
 module processor ();
     
     RegisterFile rf ();
+    memory mem();
     
 endmodule
