@@ -5,7 +5,6 @@ if __name__ == '__main__':
     compiler = Compiler(filePath)
     print(compiler.data)
     print()
-    compiler.createPackets()
     for idx in range(len(compiler.packets)):
         print(f"Instruction {idx}, Delay {compiler.delay[idx]}")
         if type(compiler.packets[idx]) == dict:

@@ -2,7 +2,7 @@ module memory #(
     parameter size = 2**22
 ) ();
 
-    reg [size-1:0] mem [31:0];
+    reg [31:0] mem [size-1:0];
 
     task initialize;
         /*

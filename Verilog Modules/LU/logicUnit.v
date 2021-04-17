@@ -1,9 +1,9 @@
 module logicUnit #(
     parameter n = 32
 ) (
-    input [n-1:0] a, input [n-1:0] b, input [4:0] s, output reg [n-1:0] c
+    input [n-1:0] a, input [n-1:0] b, input [4:0] s, input clk, output reg [n-1:0] c
 );
-    always @(a, b, s) begin
+    always @(posedge clk) begin
         case (s)
             5'b01010: c = a & b;
             5'b01011: c = a | b;

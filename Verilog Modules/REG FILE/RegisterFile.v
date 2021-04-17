@@ -21,10 +21,9 @@ module RegisterFile();
     /*
         Assign the value at addresses RA and RB to A and B
     */
-    task readReg (input [4:0] RA, RB, output [31:0] A, B); 
+    task readReg (input [4:0] RA, output [31:0] A); 
         begin
             A = registerFile[RA];
-            B = registerFile[RB];
         end
     endtask
 
