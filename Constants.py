@@ -7,6 +7,6 @@ moduleDelay = {
     "fmul": 19,
     "logic": 1,
     "ldr": 1,
-    "str": 0,
-    "mov": 0
+    "str": 1,
+    "mov": 1
 }

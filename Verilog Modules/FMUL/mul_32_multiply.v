@@ -1,4 +1,4 @@
-module mul(input [7:0]exp_1, input [7:0]exp_2, input[22:0]man_1, input [22:0]man_2, input clk , output reg [7:0]final_exp, output [22:0]final_man);
+module wallace_mul (input [7:0]exp_1, input [7:0]exp_2, input[22:0]man_1, input [22:0]man_2, input clk , output reg [7:0]final_exp, output [22:0]final_man);
     wire [63:0]temp_1,d_temp_1;
     wire [47:0] temp_2 , d_temp_2;
     wire [31:0] num_1, num_2;

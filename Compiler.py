@@ -7,10 +7,12 @@ class Compiler:
         self.filePath = filePath
         self.data = []
         self.packets = [dict(packetDict())]
-        self.parse()
         self.delay = [0]
+        self.__parse()
+        self.__createPackets()
+        self.__getDelay()
 
-    def parse(self):
+    def __parse(self):
         """
         Parse the input .ss file
 
@@ -32,7 +34,7 @@ class Compiler:
                 j.append("R0")
             self.data.append(j)
 
-    def createPackets(self):
+    def __createPackets(self):
         """
         Create packets of instructions for the VLIW processor
 
@@ -66,8 +68,6 @@ class Compiler:
                     flag = addInst(packet, packetKey, optionalKey, data)
                     if flag:
                         break
-                else:
-                    break
             # If the instruction is not added, create a new packet and add the data
             if not flag:
                 self.packets.append(dict(packetDict()))
@@ -78,10 +78,8 @@ class Compiler:
             check_war = False
             check_waw = False
             check_raw = False
-        # Compute the delay for each instruction packet
-        self.getDelay()
 
-    def getDelay(self):
+    def __getDelay(self):
         """
         Generates the delays between two packets based on its contents
 
