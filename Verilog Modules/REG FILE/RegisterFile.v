@@ -22,15 +22,11 @@ module RegisterFile();
         Assign the value at addresses RA and RB to A and B
     */
     task readReg (input [4:0] RA, output [31:0] A); 
-        begin
-            A = registerFile[RA];
-        end
+        A = registerFile[RA];
     endtask
 
     task writeReg (input [4:0] RW, input [31:0] W);
-        begin
-            registerFile[RW] = W;
-        end
+        registerFile[RW] = W;
     endtask
 
 endmodule
