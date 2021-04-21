@@ -119,3 +119,5 @@ class Compiler:
                             # Compute the necessary delay
                             self.delay[currentIdx] = max(
                                 wawDelay - sum(self.delay[predecessorIdx+1:currentIdx]), self.delay[currentIdx])
+                        
+    

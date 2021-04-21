@@ -44,36 +44,96 @@ module FPMul(input clk, input [31:0]I1, input [31:0]I2, output [31:0]out);
     triArr T5 ({S1^S2, final_exp_d_d[7:0], P_d[45:23]}, ~P_d[47] & P_d[46] & ~(&E1 | ~(|B[30:0])), out);
 endmodule
 
-// module top2;
 
-//     reg [31:0] I1, I2;
-//     wire [31:0]out;
-//     reg clk;
+// /*
+//     Including the required modules
+// */
+// `include "zeroInf.v"
+// `include "wallaceTreeMultiplier.v"
+// `include "barrelShifter.v"
+// /*
+//     A module that mutiplies two numbers represented in IEEE 754 format
+// */
+// module IEEEmultiply (input [31:0] a, input [31:0] b, input clk, output [31:0] c);
 
-//     FPMul F1(clk, I1, I2, out);
-
-//     integer j;
-//     initial 
-//     begin
-//         #0 clk = 0;
-//         for(j=0;j<50000;j++)
-//             #5 clk = ~clk;
+//     /*
+//         Required registers and wires for the module
+//     */
+//     wire s1, s2, s3;
+//     wire [7:0] e1, e2, e3, e3F, e3D;
+//     wire [22:0] m1, m2, m3, m3F, m3D;
+//     wire [63:0] prod, prodD, prodB;
+//     wire [31:0] mm1, mm2;
+//     wire [47:0] mprod, mprodD;
+//     reg [7:0] ex;
+//     integer i;
+//     /*
+//         Split the given 32-bit number into sign bit, exponent bits and mantissa bits
+//     */
+//     assign s1 = a[31];
+//     assign e1 = a[30:23];
+//     assign m1 = a[22:0];
+//     assign s2 = b[31];
+//     assign e2 = b[30:23];
+//     assign m2 = b[22:0];
+//     /*
+//         If any one of the operand is inf or zero,
+//         assign the same to the output
+//     */
+//     assign s3 = s1 ^ s2;
+//     /*
+//         Concatenating the assumed bit to the mantissa
+//         For denormal number (all exponent bits are 0), we concatenate the bitwise OR of the exponent, i.e. zero
+//         For normal numbers, we concatenate the bitwise OR of the exponent, i.e. one
+//     */
+//     assign mm1 = {|e1, m1};
+//     assign mm2 = {|e2, m2};
+//     /*
+//         Multiply the numbers using the Wallace Tree Multiplier module
+//     */
+//     wallaceTreeMultiplier wm_01 (mm1, mm2, clk, prod);
+//     nDFF #(64) ndff_prod (prod, clk, 1'b1, prodD);
+//     /*
+//         Normalizing the result to 1.m3 format
+//     */
+//     always @(*) begin
+//         /*
+//             Final exponent is the sum of e1, e2 and -127
+//             We take the product for from 47 to 0 (47 and 46 are the bits before the decimal point,
+//             for normalizing we need 1 bit before the decimal, we shift one left adding 1 to the exponent.)
+//             We also add the 1 we get from normalizing the product from step 3
+//         */
+//         ex = e1 + e2 - 7'b1111110;
+//         i = 0;
+//         /*
+//             Loop and increment the counter until we find a 1 in the product
+//         */
+//         while (prodD[47 - i] == 1'b0) begin
+//             i = i + 1;
+//         end
+//         /*
+//             Shift the product i steps left for normalizing
+//             Decrement the exponent by i amounts
+//         */
+//         ex = ex - i;
 //     end
-
-//     initial
-//     begin
-//         // case infinity and zero (out = NAN)
-//         #0 I2={1'b0, {8{1'b1}}, 23'b0}; I1=32'b0;     
-
-//         // 2 ,  9
-//         #10 I1 = 32'b01000000000000000000000000000000; I2 = 32'b01000001000100000000000000000000;
-
-//         //1.234 ,  63.201 = 77.990034 
-//         #10 I1=32'b00111111100111011111001110110110;I2=32'b01000010011111001100110111010011;
-//     end
-//     initial
-//     begin
-//         $monitor($time,  " A=%b B=%b\tC=%b\n", I1, I2, out);
-//    end
+//     barrelLeft #(48, 6) br (prodD[47:0], i, mprod);
+//     nDFF #(48) blD (mprod, clk, 1'b1, mprodD);
+//     /*
+//         Copy the exponent, and first 23 bits from the modified product. 
+//     */
+//     assign e3 = ex;
+//     assign m3 = mprodD[46:24];
+//     /*
+//         Modify the outputs to the edge cases, if any
+//     */
+//     zeroInf zf_01 (e1, m1, e2, m2, e3, m3, e3F, m3F);
+//     nDFF #(23) m3DFF (m3F, clk, 1'b1, m3D);
+//     nDFF #(8) e3DFF (e3F, clk, 1'b1, e3D);
+//     /*
+//         Concat the sign bit, exponent bits and the mantissa bits
+//     */
+//     assign c = {s3, e3D, m3D};
 
 // endmodule
+
