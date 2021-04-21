@@ -1,6 +1,6 @@
 `include "include.v"
 
-module processor (input clk, output[255:0] ans);
+module processor (input clk);
 
     // Required parameters for the processor
     parameter instMemSize = 1024;
@@ -10,10 +10,8 @@ module processor (input clk, output[255:0] ans);
     RegisterFile rf ();
     memory mem();
 
-    // Required variables for the processor
+    // Instruction memory for the processor
     reg [instSize-1:0] inst [instMemSize-1:0];
-    reg [31:0] pc;
-    reg [0:9][31:0] currentInst;
 
     // Task to initialize the program counter
     task initPC;
@@ -32,50 +30,112 @@ module processor (input clk, output[255:0] ans);
     task writeInst(input [instSize:0] packet, input [32:0] index);
         inst[index] = packet;
     endtask
+    
+    /*--------------------------------------------------------------------------------------------
+    Reg Declarations for IF
+    --------------------------------------------------------------------------------------------*/
+    reg [31:0] pc;
+    reg [0:9][31:0] currentInst;
+
+    /*--------------------------------------------------------------------------------------------
+    Reg Declarations for ID
+    --------------------------------------------------------------------------------------------*/
+    reg [31:0] add0_inst;
+    reg [4:0] add0_out;
+    wire [4:0] add0_out_d;
+    
+    reg [31:0] add1_inst;
+    reg [4:0] add1_out;
+    wire [4:0] add1_out_d;
+
+    reg [31:0] mul_inst;
+    reg [4:0] mul_out1, mul_out2;
+    wire [4:0]  mul_out1_d, mul_out2_d;
+    
+    reg [31:0] fadd0_inst;
+    reg [4:0] fadd0_out;
+    wire [4:0] fadd0_out_d;
+
+    reg [31:0] fadd1_inst;
+    reg [4:0] fadd1_out;
+    wire [4:0] fadd1_out_d;
+    
+    reg [31:0] fmul_inst;
+    reg [4:0] fmul_out;
+    wire [4:0] fmul_out_d;
+    
+    reg [31:0] logic_inst;
+    reg [4:0] logic_out;
+    wire [4:0] logic_out_d;
+        
+    reg [31:0] ldr_inst;
+    
+    reg [31:0] str_inst, str_data;
+    
+    reg [31:0] mov_inst;
+
+    reg [9:0][4:0] op;
+    reg [7:0][4:0] out;
+    reg [13:0][31:0] operandData;
+    reg [2:0][53:0] memoryData;
+
+    /*--------------------------------------------------------------------------------------------
+    Reg Declarations for MEM
+    --------------------------------------------------------------------------------------------*/
+    reg [31:0] data0;
 
     /*============================================================================================
     Module instantiation for Add 0 instruction
     ============================================================================================*/
     reg [31:0] a0, b0;
+    reg cin0;
     wire [31:0] out0;
     wire cout0;
-    add_32_rec_dub add0 (a0, b0, clk, out0, cout0);
+    CLA add0 (clk, out0, cout0, a0, b0, cin0);
+    delay #(4, 5) delayAdd0 (clk, add0_out, add0_out_d);
 
     /*============================================================================================
     Module instantiation for Add 1 instruction
     ============================================================================================*/
     reg [31:0] a1, b1;
+    reg cin1;
     wire [31:0] out1;
     wire cout1;
-    add_32_rec_dub add1 (a1, b1, clk, out1, cout1);
+    CLA add1 (clk, out1, cout1, a1, b1, cin1);
+    delay #(4, 5) delayAdd1(clk, add1_out, add1_out_d);
 
     /*============================================================================================
     Module instantiation for Mul instruction
     ============================================================================================*/
     reg [31:0] a2, b2;
     wire [63:0] out2;
-    wallace_tree_mul mul (a2, b2, clk, out2);
+    WallaceMul mul (clk, a2, b2, out2);
+    delay #(13, 5) delayMul1 (clk, mul_out1, mul_out1_d);
+    delay #(13, 5) delayMul2 (clk, mul_out2, mul_out2_d);
 
     /*============================================================================================
     Module instantiation for Fadd 0 instruction
     ============================================================================================*/
     reg [31:0] a3, b3;
     wire [31:0] out3;
-    float_add fadd0 (a3, b3, clk, out3); 
+    FPAdder fadd0 (clk, a3, b3, out3); 
+    delay #(4, 5) delayFadd0(clk, fadd0_out, fadd0_out_d);
 
     /*============================================================================================
     Module instantiation for Fadd 1 instruction
     ============================================================================================*/
     reg [31:0] a4, b4;
     wire [31:0] out4;
-    float_add fadd1 (a4, b4, clk, out4); 
+    FPAdder fadd1 (clk, a4, b4, out4); 
+    delay #(4, 5) delayFadd(clk, fadd1_out, fadd1_out_d);
 
     /*============================================================================================
     Module instantiation for Fmul instruction
     ============================================================================================*/
     reg [31:0] a5, b5;
     wire [31:0] out5;
-    float_mul fmul (a5, b5, clk, out5); 
+    FPMul fmul (clk, a5, b5, out5); 
+    delay #(26, 5) delayFmul (clk, fmul_out, fmul_out_d);
 
     /*============================================================================================
     Module instantiation for Logic instruction
@@ -83,357 +143,254 @@ module processor (input clk, output[255:0] ans);
     reg [31:0] a6, b6;
     wire [31:0] out6;
     reg [4:0] sel;
-    logicUnit #(32) lu (a6, b6, sel, clk, out6);
-
-    /*============================================================================================
-    Module instantiation for Load instruction
-    ============================================================================================*/
-    reg [22:0] memAddr0;
-    reg [4:0] regAddr0;
-    reg [31:0] data0;
-    
-    /*============================================================================================
-    Module instantiation for Store instruction
-    ============================================================================================*/
-    reg [22:0] memAddr1;
-    reg [4:0] regAddr1;
-    reg [31:0] data1;
-
-    /*============================================================================================
-    Module instantiation for Move instruction
-    ============================================================================================*/
-    reg [4:0] regAddr2;
-    reg [31:0] data2;
+    logicUnit #(32) lu (a6, b6, sel, out6);
 
     /*============================================================================================
     Module instantiation for DFF PC instruction
     ============================================================================================*/
     wire [31:0] pc_d;
-    dff_n #(32) dff_pc (pc, clk, 1'b1, pc_d);
+    dff #(32) dff_pc (pc, clk, 1'b1, pc_d);
 
     /*============================================================================================
     Module instantiation for DFF OP Codes
     ============================================================================================*/
-    wire [49:0] op_d;
-    dff_n #(50) dff_op (op, clk, 1'b1, op_d);
+    wire [9:0][4:0] op_d, op_d_d;
+    dff #(50) dff_op1 (op, clk, 1'b1, op_d);
+    dff #(50) dff_op2 (op_d, clk, 1'b1, op_d_d);
 
     /*============================================================================================
-    Module instantiation for DFF Output 
+    Module instantiation for DFF Operand data
     ============================================================================================*/
-    wire [255:0] out_d;
-    dff_n #(256) dff_out (outData, clk, 1'b1, out_d);
+    wire [13:0][31:0] operandData_d;
+    dff #(14*32) dff_opData (operandData, clk, 1'b1, operandData_d);
+
+    /*============================================================================================
+    Module instantiation for DFF Memory data
+    ============================================================================================*/
+    wire [2:0][53:0]memoryData_d;
+    delay #(2, 54*3) delay_mem (clk, memoryData, memoryData_d);
+
+    /*============================================================================================
+    Output Pipeline 
+    ============================================================================================*/
+    wire [7:0][4:0] out_d;
+    dff #(8*5) dff_out (out, clk, 1'b1, out_d);
 
     /*============================================================================================
     Processor Pipeline
     ============================================================================================*/
     
-    /*--------------------------------REG Declarations for ID-----------------------------------*/
-    reg [31:0] add0_inst, add0_op1Data, add0_op2Data;
-    reg [4:0] add0_op1, add0_op2, add0_op, add0_out;
-    
-    reg [31:0] add1_inst, add1_op1Data, add1_op2Data;
-    reg [4:0] add1_op1, add1_op2, add1_op, add1_out;
-
-    reg [31:0] mul_inst, mul_op1Data, mul_op2Data;
-    reg [4:0] mul_op1, mul_op2, mul_op, mul_out1, mul_out2;
-    
-    reg [31:0] fadd0_inst, fadd0_op1Data, fadd0_op2Data;
-    reg [4:0] fadd0_op1, fadd0_op2, fadd0_op, fadd0_out;
-
-    reg [31:0] fadd1_inst, fadd1_op1Data, fadd1_op2Data;
-    reg [4:0] fadd1_op1, fadd1_op2, fadd1_op, fadd1_out;
-    
-    reg [31:0] fmul_inst, fmul_op1Data, fmul_op2Data;
-    reg [4:0] fmul_op1, fmul_op2, fmul_op, fmul_out;
-    
-    reg [31:0] logic_inst, logic_op1Data, logic_op2Data;
-    reg [4:0] logic_op1, logic_op2, logic_op, logic_out;
-        
-    reg [31:0] ldr_inst;
-    reg [21:0] ldr_addr;
-    reg [4:0] ldr_op, ldr_dest;
-    
-    reg [31:0] str_inst, str_data;
-    reg [4:0] str_op1, str_op, str_src;
-    
-    reg [31:0] mov_inst;
-    reg [21:0] mov_data;
-    reg [4:0] mov_op, mov_dest;
-
-    reg [49:0] op;
-
-    /*--------------------------------REG Declarations for EX-----------------------------------*/
-    reg [31:0] add0_op2_mem;
-    
-    reg [31:0] add1_op2_mem;
-
-    reg [255:0] outData;
-
-       
-    /*--------------------------------REG Declarations for MEM----------------------------------*/
-    reg[4:0] ldr_dest_mem;
-    
-    reg[4:0] str_src_mem;
-    reg[31:0] str_data_mem;
-    
-    reg[4:0] mov_dest_mem;
-    reg[31:0] mov_data_mem;
-
-
-    /*--------------------------------REG Declarations for WB-----------------------------------*/
-    wire [31:0] add0_out_mem;
-
-    wire [31:0] add1_out_mem;
-
-    wire [31:0] mul_out1_mem;
-    wire [31:0] mul_out2_mem;
-
-    wire [31:0] fadd0_out_mem;
-    wire [31:0] fadd1_out_mem;
-
-    wire [31:0] fmul_out_mem;
-    
-    wire [31:0] logic_out_mem;
-    
     always @(*) begin
+
         /*========================================================================================
         Instruction Fetch (IF)
         ========================================================================================*/
-        rf.registerFile[31] = pc_d;
-        currentInst = inst[pc_d];
-        pc = pc_d + 1;
+        
+        rf.registerFile[31] = pc;
+        currentInst = inst[pc];
+        pc = pc + 1'b1;
 
         /*========================================================================================
         Instruction Decode (ID)
         ========================================================================================*/
+        
         // ADD0 ID
 
         add0_inst = currentInst[0];
-        add0_op = add0_inst[31:27];
-        add0_out = add0_inst[26:22];
-        add0_op1 = add0_inst[21:17];
-        add0_op2 = add0_inst[16:12];
-        rf.readReg(add0_op1, add0_op1Data);
-        rf.readReg(add0_op2, add0_op2Data);
-        mem.writeMem(0, add0_op1Data);
-        mem.writeMem(1, add0_op2Data);
-        mem.writeMem(2, add0_out);
+        op[0] = add0_inst[31:27];
+        out[0] = add0_inst[26:22];
+        rf.readReg(add0_inst[21:17], operandData[0]);
+        rf.readReg(add0_inst[16:12], operandData[1]);
         
         // ADD1 ID
-        
+
         add1_inst = currentInst[1];
-        add1_op = add1_inst[31:27];
-        add1_out = add1_inst[26:22];
-        add1_op1 = add1_inst[21:17];
-        add1_op2 = add1_inst[16:12];
-        rf.readReg(add1_op1, add1_op1Data);
-        rf.readReg(add1_op2, add1_op2Data);
-        mem.writeMem(3, add1_op1Data);
-        mem.writeMem(4, add1_op2Data);
-        mem.writeMem(5, add1_out);
+        op[1] = add1_inst[31:27];
+        out[1] = add1_inst[26:22];
+        rf.readReg(add1_inst[21:17], operandData[2]);
+        rf.readReg(add1_inst[16:12], operandData[3]);
         
         // MUL ID
         
         mul_inst = currentInst[2];
-        mul_op = mul_inst[31:27];
-        mul_out1 = mul_inst[26:22];
-        mul_out2 = mul_inst[21:17];
-        mul_op1 = mul_inst[16:12];
-        mul_op2 = mul_inst[11:7];
-        rf.readReg(mul_op1, mul_op1Data);
-        rf.readReg(mul_op2, mul_op2Data);
-        mem.writeMem(6, mul_op1Data);
-        mem.writeMem(7, mul_op2Data);
-        mem.writeMem(8, mul_out1);
-        mem.writeMem(9, mul_out2);
+        op[2] = mul_inst[31:27];
+        out[2] = mul_inst[26:22];
+        out[3] = mul_inst[21:17];
+        rf.readReg(mul_inst[16:12], operandData[4]);
+        rf.readReg(mul_inst[11:7], operandData[5]);
         
         // FADD0 ID
         
         fadd0_inst = currentInst[3];
-        fadd0_op = fadd0_inst[31:27];
-        fadd0_out = fadd0_inst[26:22];
-        fadd0_op1 = fadd0_inst[21:17];
-        fadd0_op2 = fadd0_inst[16:12];
-        rf.readReg(fadd0_op1, fadd0_op1Data);
-        rf.readReg(fadd0_op2, fadd0_op2Data);
-        mem.writeMem(10, fadd0_op1Data);
-        mem.writeMem(11, fadd0_op2Data);
-        mem.writeMem(12, fadd0_out);
+        op[3] = fadd0_inst[31:27];
+        out[4] = fadd0_inst[26:22];
+        rf.readReg(fadd0_inst[21:17], operandData[6]);
+        rf.readReg(fadd0_inst[16:12], operandData[7]);
         
-        // FADD1 ID
+        // // FADD1 ID
         
         fadd1_inst = currentInst[4];
-        fadd1_op = add1_inst[31:27];
-        fadd1_out = fadd1_inst[26:22];
-        fadd1_op1 = fadd1_inst[21:17];
-        fadd1_op2 = fadd1_inst[16:12];
-        rf.readReg(fadd1_op1, fadd1_op1Data);
-        rf.readReg(fadd1_op2, fadd1_op2Data);
-        mem.writeMem(13, fadd1_op1Data);
-        mem.writeMem(14, fadd1_op2Data);
-        mem.writeMem(15, fadd1_out);
+        op[4] = add1_inst[31:27];
+        out[5] = fadd1_inst[26:22];
+        rf.readReg(fadd1_inst[21:17], operandData[8]);
+        rf.readReg(fadd1_inst[16:12], operandData[9]);
         
         
         // FMUL ID
         
         fmul_inst = currentInst[5];
-        fmul_op = fmul_inst[31:27];
-        fmul_out = fmul_inst[26:22];
-        fmul_op1 = fmul_inst[16:12];
-        fmul_op2 = fmul_inst[11:7];
-        rf.readReg(fmul_op1, fmul_op1Data);
-        rf.readReg(fmul_op2, fmul_op2Data);
-        mem.writeMem(16, fmul_op1Data);
-        mem.writeMem(17, fmul_op2Data);
-        mem.writeMem(18, fmul_out);
+        op[5] = fmul_inst[31:27];
+        out[6] = fmul_inst[26:22];
+        rf.readReg(fmul_inst[16:12], operandData[10]);
+        rf.readReg(fmul_inst[11:7], operandData[11]);
+        
         
         // LOGIC ID
         
         logic_inst = currentInst[6];
-        logic_op = logic_inst[31:27];
-        logic_out = logic_inst[26:22];
-        logic_op1 = logic_inst[21:17];
-        logic_op2 = logic_inst[16:12];
-        rf.readReg(logic_op1, logic_op1Data);
-        rf.readReg(logic_op2, logic_op2Data);
-        mem.writeMem(19, logic_op1Data);
-        mem.writeMem(20, logic_op2Data);
-        mem.writeMem(21, logic_out);
+        op[6] = logic_inst[31:27];
+        out[7] = logic_inst[26:22];
+        rf.readReg(logic_inst[21:17], operandData[12]);
+        rf.readReg(logic_inst[16:12], operandData[13]);
+        
         
         // LOAD ID
         
         ldr_inst = currentInst[7];
-        ldr_op = ldr_inst[31:27];
-        ldr_dest = ldr_inst[26:22];
-        ldr_addr = ldr_inst[21:0];
-        mem.writeMem(22, ldr_addr);
-        mem.writeMem(23, ldr_dest);
+        op[7] = ldr_inst[31:27];
+        // dest, data
+        memoryData[0] = {ldr_inst[26:22], ldr_inst[21:0]};
+        
         
         // STORE ID
         
         str_inst = currentInst[8];
-        str_op = str_inst[31:27];
-        str_src = str_inst[26:5];
-        str_op1 = str_inst[4:0];
-        rf.readReg(str_op1, str_data);
-        mem.writeMem(24, str_data);
-        mem.writeMem(25, str_src);
+        op[8] = str_inst[31:27];
+        rf.readReg(str_inst[4:0], str_data);
+        // src, data
+        memoryData[1] = {str_inst[26:5], str_data};
         
         // MOV ID
         
         mov_inst = currentInst[9];
-        mov_op = mov_inst[31:27];
-        mov_dest = mov_inst[26:22];
-        mov_data = mov_inst[21:0];
-        mem.writeMem(26, mov_data);
-        mem.writeMem(27, mov_dest);
-
-        op = {add0_op, add1_op, mul_op, fadd0_op, fadd1_op, fmul_op, logic_op, ldr_op, str_op, mov_op};
+        op[9] = mov_inst[31:27];
+        // dest, data
+        memoryData[2] = {mov_inst[26:22], mov_inst[21:0]};
+        
         /*========================================================================================
         Execute (EX)
         ========================================================================================*/
+        
         // ADD0 EX
-        mem.readMem(0, a0);
-        mem.readMem(1, add0_op2_mem);
-        if (op_d[46] == 1'b1)
-            b0 = ~add0_op2_mem + 1;
+
+        a0 = operandData_d[0];
+        if (op_d[0][1] == 1'b1)
+            b0 = ~operandData_d[1] + 1;
         else
-            b0 = add0_op2_mem;
+            b0 = operandData_d[1];
+        if (op_d[0][0] == 1'b1)
+            cin0 = 1'b1;
+        else
+            cin0 = 1'b0;
+        add0_out = out_d[0];
 
         // ADD1 EX
-        mem.readMem(3, a1);
-        mem.readMem(4, add1_op2_mem);
-        if (op_d[46] == 1'b1)
-            b1 = ~add1_op2_mem + 1;
+
+        a1 = operandData_d[2];
+        if (op_d[1][1] == 1'b1)
+            b1 = ~operandData_d[3] + 1;
         else
-            b1 = add1_op2_mem;
+            b1 = operandData_d[3];
+        if (op_d[1][0] == 1'b1)
+            cin1 = 1'b1;
+        else
+            cin1 = 1'b0;
+        add1_out = out_d[1];
 
         // MUL EX
-        mem.readMem(6, a2);
-        mem.readMem(7, b2);
-
+        
+        a2 = operandData_d[4];
+        b2 = operandData_d[5];
+        mul_out1 = out_d[2];
+        mul_out2 = out_d[3];
+        
         // FADD0 EX
-        mem.readMem(10, a3);
-        mem.readMem(11, b3);
+        
+        a3 = operandData_d[6];
+        b3 = operandData_d[7];
+        fadd0_out = out_d[4];
 
         // FADD1 EX
-        mem.readMem(13, a4);
-        mem.readMem(14, b4);
+
+        a4 = operandData_d[8];
+        b4 = operandData_d[9];
+        fadd1_out = out_d[5];
 
         // FMUL EX
-        mem.readMem(16, a5);
-        mem.readMem(17, b5);
 
+        a5 = operandData_d[10];
+        b5 = operandData_d[11];
+        fmul_out = out_d[6];
+        
         // LOGIC EX
-        sel = op_d[19:15];
-        mem.readMem(19, a6);
-        mem.readMem(20, b6);
-
-        outData = {out0, out1, out2, out3, out4, out5, out6};
+        
+        a6 = operandData_d[12];
+        b6 = operandData_d[13];
+        sel = op_d[6];
+        logic_out = out_d[7];
 
         /*========================================================================================
         Memory Access (MEM)
         ========================================================================================*/
+        
         // LDR MEM
 
-        mem.readMem(22, ldr_addr_mem);
-        mem.readMem(23, ldr_dest_mem);
-        mem.readMem(ldr_addr_mem, data0);
-        rf.writeReg(ldr_dest_mem, data0);
+        mem.readMem(memoryData_d[0][21:0], data0);
+        if (op_d_d[7] == 5'b10010)
+            rf.writeReg(memoryData_d[0][26:22], data0);
         
         // STR MEM
-
-        mem.readMem(24, str_src_mem);
-        mem.readMem(25, str_data_mem);
-        mem.writeMem(str_src_mem, str_data_mem);
+        if (op_d_d[8] == 5'b10011)
+            mem.writeMem(memoryData_d[1][53:32], memoryData_d[1][31:0]);
     
         // MOV MEM
-
-        mem.readMem(26, mov_data_mem);
-        mem.readMem(27, mov_dest_mem);
-        rf.writeReg(mov_dest_mem, mov_data_mem);
+        if (op_d_d[9] == 5'b10100)
+            rf.writeReg(memoryData_d[2][26:22], memoryData_d[2][21:0]);
 
         /*========================================================================================
         Write Back (WB)
         ========================================================================================*/
+        
         // ADD0 WB
         
-        mem.readMem(2, add0_out_mem);
-        rf.writeReg(add0_out_mem, out_d[255:224]);
+        rf.writeReg(add0_out_d, out0);
 
         // ADD1 WB
 
-        mem.readMem(5, add1_out_mem);
-        rf.writeReg(add0_out_mem, out_d[223:192]);
+        rf.writeReg(add1_out_d, out1);
         
         // MUL WB
         
-        mem.readMem(8, mul_out1_mem);
-        rf.writeReg(add0_out_mem, out_d[191:160]);
-        mem.readMem(9, mul_out2_mem);
-        rf.writeReg(add0_out_mem, out_d[159:128]);
+        rf.writeReg(mul_out1_d, out2[63:32]);
+        rf.writeReg(mul_out2_d, out2[31:0]);
 
         // FADD0 WB
 
-        mem.readMem(12, fadd0_out_mem);
-        rf.writeReg(add0_out_mem, out_d[127:96]);
+        rf.writeReg(fadd0_out_d, out3);
 
         // FADD1 WB
 
-        mem.readMem(15, fadd1_out_mem);
-        rf.writeReg(add0_out_mem, out_d[95:64]);
+        rf.writeReg(fadd1_out_d, out4);
 
         // FMUL WB
         
-        mem.readMem(18, fmul_out_mem);
-        rf.writeReg(add0_out_mem, out_d[63:32]);
+        rf.writeReg(fmul_out_d, out5);
         
         // LOGIC WB
         
-        mem.readMem(21, logic_out_mem);
-        rf.writeReg(add0_out_mem, out_d[31:0]);
-    end
+        rf.writeReg(logic_out, out6);
 
-    assign ans = out_d;
+        rf.registerFile[0] = 32'b0;
+    end
 
 endmodule
