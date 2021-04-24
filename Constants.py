@@ -40,13 +40,17 @@ module tb;
         for (j = 0; j < nInst; j = j + 1) begin
             proc.writeInst(instructions[j], index[j]);
         end
-        #100 $finish; 
+        #200 $finish; 
     end
 
-    always @(proc.rf.registerFile[31]) begin
+    always @(clk) begin
+        $display("{{\\n \\\"time\\\": ", $time, ",");
         for (i = 0; i < 32; i = i + 1)
-            $display("%d: %b", i, proc.rf.registerFile[i]);
-        $display("-----------------------------------------------------------------------");
+            if (i == 31)
+                $display("\\\"%d\\\": \\\"%d\\\"", i, proc.rf.registerFile[i]);
+            else
+                $display("\\\"%d\\\": \\\"%d\\\",", i, proc.rf.registerFile[i]);
+        $display("}}");
     end
     
 endmodule
