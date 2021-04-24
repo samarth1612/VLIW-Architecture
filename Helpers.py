@@ -289,3 +289,25 @@ def check(pack, inst):
             if pack[key] == inst:
                 return True
     return False
+
+
+def packetBinary(packet):
+    binPacket = ""
+    for inst in list(packet.values()):
+        if inst:
+            temp = "32'b" + inst[0] + "_"
+            for it in range(1, len(inst)):
+                if inst[it][0] == "#":
+                    temp += str(bin(int(inst[it][1:]))[2:].zfill(22)) + "_"
+                elif inst[it][0] == "R" and inst[it] != "R0":
+                    temp += str(bin(int(inst[it][1:]))[2:].zfill(5)) + "_"
+            count10 = temp.count("1") + temp.count("0")
+            if count10 != 32:
+                temp += str(bin(0)[2:].zfill(32-count10))
+            else:
+                temp = temp[:len(temp)-1]
+            binPacket += temp + ", "
+        else:
+            binPacket += "32'b0, "
+    binPacket = "{" + binPacket[:len(binPacket)-2] + "}"
+    return binPacket

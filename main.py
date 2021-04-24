@@ -14,3 +14,5 @@ if __name__ == '__main__':
         else:
             print(compiler.packets[idx])
         print()
+
+    compiler.generateTestBench()

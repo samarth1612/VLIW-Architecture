@@ -1,5 +1,7 @@
+import os
+
 from Helpers import *
-from Constants import moduleDelay
+from Constants import *
 
 
 class Compiler:
@@ -119,5 +121,21 @@ class Compiler:
                             # Compute the necessary delay
                             self.delay[currentIdx] = max(
                                 wawDelay - sum(self.delay[predecessorIdx+1:currentIdx]), self.delay[currentIdx])
-                        
-    
+
+    def generateTestBench(self):
+        for it in range(1, len(self.delay)):
+            self.delay[it] += self.delay[it-1]
+        binPacket = []
+        for packet in self.packets:
+            binPacket.append(packetBinary(packet))
+        assignInst = ""
+        for it in range(len(binPacket)):
+            assignInst += f"\tassign instructions[{it}] = {binPacket[it]};\n"
+        assignDelay = ""
+        for it in range(len(binPacket)):
+            assignDelay += f"\tassign index[{it}] = {self.delay[it]};\n"
+
+        testBenchPath = f"Verilog Modules\{os.path.splitext(os.path.basename(self.filePath))[0]}.v"
+        with open(testBenchPath, "w") as fp:
+            fp.write(testBench.format(
+                nInst=len(binPacket), inst=assignInst, delay=assignDelay))

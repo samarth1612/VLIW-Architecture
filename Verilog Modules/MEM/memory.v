@@ -10,11 +10,11 @@ module memory #(
         */
         integer i;
         for (i = 0; i < size; i = i + 1) begin : memoryInit
-            mem[i] = $random;
+            mem[i] = i;
         end
     endtask
 
-    task readMem (input [$clog2(size)-1:0] idx, output [31:0] A); 
+    task readMem (input [$clog2(size)-1:0] idx, output [31:0] A);
         begin
             A = mem[idx];
         end
@@ -25,5 +25,5 @@ module memory #(
             mem[idx] = A;
         end
     endtask
-    
+
 endmodule
