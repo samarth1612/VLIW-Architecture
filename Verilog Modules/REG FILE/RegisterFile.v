@@ -1,7 +1,7 @@
 /*
     A module that manages the register files
     Input: 32-bit number for writing (W), three 5-bit addresses (RA, RB for reading, RW for writing), 1-bit select for read / write, clock
-    Output: Two 32-bit numbers read from the address RA and RB (A, B) 
+    Output: Two 32-bit numbers read from the address RA and RB (A, B)
 */
 module RegisterFile();
 
@@ -15,13 +15,13 @@ module RegisterFile();
         */
         integer i;
         for (i = 0; i < 32; i = i + 1) begin : registerFileInit
-            registerFile[i] = $random;
+            registerFile[i] = i;
         end
     endtask
     /*
         Assign the value at addresses RA and RB to A and B
     */
-    task readReg (input [4:0] RA, output [31:0] A); 
+    task readReg (input [4:0] RA, output [31:0] A);
         A = registerFile[RA];
     endtask
 

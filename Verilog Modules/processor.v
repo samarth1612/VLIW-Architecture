@@ -3,7 +3,7 @@
 module processor (input clk);
 
     // Required parameters for the processor
-    parameter instMemSize = 1024;
+    parameter instMemSize = 64;
     parameter instSize = 320;
     
     // Insitantiation of the register file and memory nlock
