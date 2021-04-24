@@ -1,4 +1,6 @@
 import os
+from sys import platform
+import ast
 
 from Helpers import *
 from Constants import *
@@ -7,6 +9,7 @@ from Constants import *
 class Compiler:
     def __init__(self, filePath):
         self.filePath = filePath
+        self.fileName = os.path.splitext(os.path.basename(self.filePath))[0]
         self.data = []
         self.packets = [dict(packetDict())]
         self.delay = [0]
@@ -135,7 +138,36 @@ class Compiler:
         for it in range(len(binPacket)):
             assignDelay += f"\tassign index[{it}] = {self.delay[it]};\n"
 
-        testBenchPath = f"Verilog Modules\{os.path.splitext(os.path.basename(self.filePath))[0]}.v"
+        testBenchPath = f"Verilog_Modules\{self.fileName}.v"
         with open(testBenchPath, "w") as fp:
             fp.write(testBench.format(
                 nInst=len(binPacket), inst=assignInst, delay=assignDelay))
+        
+    def executeTestBench(self):
+        os.chdir("Verilog_Modules")
+        os.system(f"iverilog -o {self.fileName} {self.fileName}.v")
+        if platform == "linux":
+            os.system(f"./{self.fileName} > {self.fileName}.txt")
+        elif platform == "win32":
+            os.system(f"vvp {self.fileName} > {self.fileName}.txt")
+        with open(f"{self.fileName}.txt", "r") as fp:
+            data = fp.read()
+        outputData = []
+        times = []
+        data = data.replace(" ", "")
+        while True:
+            if data.find("}") == -1:
+                break
+            else:
+                end = data.index("}")
+                timeDict = ast.literal_eval(data[:end+1])
+                if timeDict["time"] in times:
+                    outputData[-1] = timeDict
+                    data = data[end+1:]
+                    continue
+                outputData.append(timeDict)
+                times.append(timeDict["time"])
+                data = data[end+1:]
+        for x in outputData:
+            print(x)
+            print()
