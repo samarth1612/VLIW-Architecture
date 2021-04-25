@@ -283,6 +283,16 @@ def addInst(packet, packetKey, optionalKey, data):
 
 
 def check(pack, inst):
+    """
+    A function to check if an instruction is present in the packet
+    
+    Input:
+    - pack: The packet to be checked
+    - inst: The instruction
+
+    Output:
+    Returns True if the instruction is present in the packet else Fase
+    """
     inst_key = getPacketKey(inst[0])
     for key in inst_key:
         if key:
@@ -292,6 +302,15 @@ def check(pack, inst):
 
 
 def packetBinary(packet):
+    """
+    A function that converts from dictionary of instruction to binary form
+    
+    Input:
+    - packet: The packet of instructions
+
+    Output:
+    - Returns a binary packet of instructions 
+    """
     binPacket = ""
     for inst in list(packet.values()):
         if inst:

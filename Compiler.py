@@ -152,37 +152,54 @@ class Compiler:
                                 wawDelay - sum(self.delay[predecessorIdx+1:currentIdx]), self.delay[currentIdx])
 
     def generateTestBench(self):
+        """
+        Generates a testbench for the processor verilog modules
+
+        Output: Returns a testbench (.v) file
+        """
         for it in range(1, len(self.delay)):
             self.delay[it] += self.delay[it-1]
         binPacket = []
+        # Get the binary version of the packets to be written in the test bench
         for packet in self.packets:
             binPacket.append(packetBinary(packet))
+        # Assigning the instructions to the wires in testbench
         assignInst = ""
         for it in range(len(binPacket)):
             assignInst += f"\tassign instructions[{it}] = {binPacket[it]};\n"
+        # Assigning the delays to the wires in testbench
         assignDelay = ""
         for it in range(len(binPacket)):
             assignDelay += f"\tassign index[{it}] = {self.delay[it]};\n"
-
+        # Formating the testbench variable with input instructions
         testBenchPath = f"Verilog_Modules\{self.fileName}.v"
         with open(testBenchPath, "w") as fp:
             fp.write(testBench.format(
-                nInst=len(binPacket), inst=assignInst, delay=assignDelay))
+                nInst=len(binPacket), inst=assignInst, delay=assignDelay, finish=len(binPacket)*30))
 
     def executeTestBench(self):
+        """
+        Execute the testbench for the processor verilog modules
+
+        Output: Compiles the verilog file and stores the data of the register file after performing the operations specified by the user
+        """
         os.chdir("Verilog_Modules")
+        # Compiling the verilog testbench 
         os.system(f"iverilog -o {self.fileName} {self.fileName}.v")
         print("Generating random values for register file and memory block...\n")
-        if platform == "linux" or platform == "darwin":
+        # For Linux / MacOS systems storing the data of the register file 
+        if platform in ["linux", "darwin"]:
             os.system(f"./{self.fileName} > {self.fileName}.txt")
+        # For Windows systems storing the data of the register file 
         elif platform == "win32":
             os.system(f"vvp {self.fileName} > {self.fileName}.txt")
+        # Opening the stored output file in read mode s
         with open(f"{self.fileName}.txt", "r") as fp:
             data = fp.read()
         print("Compiling the register values...\n")
-        times = []
         output = []
         data = data.replace(" ", "")
+        # Converting the file to the list of dictionary 
         while True:
             if data.find("}") == -1:
                 break
@@ -192,9 +209,11 @@ class Compiler:
                 output.append(timeDict)
                 data = data[end+1:]
         self.outputData.append(output[0])
-
+        # Removing intermediate register file output
         for out in range(1, len(output)):
             for key in output[out].keys():
                 if output[out][key] != output[out-1][key] and key != "time" and key != "31":
                     self.outputData.append(output[out])
                     break
+        os.remove(f"{self.fileName}")
+        os.remove(f"{self.fileName}.txt")
