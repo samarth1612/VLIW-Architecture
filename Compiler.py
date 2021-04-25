@@ -13,6 +13,7 @@ class Compiler:
         self.data = []
         self.packets = [dict(packetDict())]
         self.delay = [0]
+        self.outputData = []
         self.__parse()
         self.__createPackets()
         self.__getDelay()
@@ -30,6 +31,8 @@ class Compiler:
         opCode = getOPCode()
         for x in fileData:
             y = x.split()
+            if not y:
+                continue
             if y[0] == "//":
                 continue
             j = [opCode[y[0]]]
@@ -142,18 +145,18 @@ class Compiler:
         with open(testBenchPath, "w") as fp:
             fp.write(testBench.format(
                 nInst=len(binPacket), inst=assignInst, delay=assignDelay))
-        
+
     def executeTestBench(self):
         os.chdir("Verilog_Modules")
         os.system(f"iverilog -o {self.fileName} {self.fileName}.v")
-        if platform == "linux":
+        if platform == "linux" or platform == "darwin":
             os.system(f"./{self.fileName} > {self.fileName}.txt")
         elif platform == "win32":
             os.system(f"vvp {self.fileName} > {self.fileName}.txt")
         with open(f"{self.fileName}.txt", "r") as fp:
             data = fp.read()
-        outputData = []
         times = []
+        output = []
         data = data.replace(" ", "")
         while True:
             if data.find("}") == -1:
@@ -162,12 +165,14 @@ class Compiler:
                 end = data.index("}")
                 timeDict = ast.literal_eval(data[:end+1])
                 if timeDict["time"] in times:
-                    outputData[-1] = timeDict
+                    output[-1] = timeDict
                     data = data[end+1:]
                     continue
-                outputData.append(timeDict)
+                output.append(timeDict)
                 times.append(timeDict["time"])
                 data = data[end+1:]
-        for x in outputData:
-            print(x)
-            print()
+        self.outputData.append(output[0])
+        for out in range(1, len(output)):
+            for key in output[out].keys():
+                if output[out][key] != output[out-1][key] and key != "time" and key != "31":
+                    self.outputData.append(output[out])

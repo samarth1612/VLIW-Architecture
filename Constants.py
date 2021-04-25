@@ -1,14 +1,14 @@
 moduleDelay = {
-    "add0": 4,
-    "add1": 4,
-    "mul": 13,
-    "fadd0": 4,
-    "fadd1": 4,
+    "add0": 8,
+    "add1": 8,
+    "mul": 26,
+    "fadd0": 8,
+    "fadd1": 8,
     "fmul": 26,
-    "logic": 1,
-    "ldr": 1,
-    "str": 1,
-    "mov": 1
+    "logic": 2,
+    "ldr": 2,
+    "str": 2,
+    "mov": 2
 }
 
 testBench = """`include "processor.v"

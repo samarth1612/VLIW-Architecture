@@ -135,7 +135,7 @@ module processor (input clk);
     reg [31:0] a5, b5;
     wire [31:0] out5;
     FPMul fmul (clk, a5, b5, out5); 
-    delay #(26, 5) delayFmul (clk, fmul_out, fmul_out_d);
+    delay #(13, 5) delayFmul (clk, fmul_out, fmul_out_d);
 
     /*============================================================================================
     Module instantiation for Logic instruction
@@ -245,8 +245,8 @@ module processor (input clk);
         fmul_inst = currentInst[5];
         op[5] = fmul_inst[31:27];
         out[6] = fmul_inst[26:22];
-        rf.readReg(fmul_inst[16:12], operandData[10]);
-        rf.readReg(fmul_inst[11:7], operandData[11]);
+        rf.readReg(fmul_inst[21:17], operandData[10]);
+        rf.readReg(fmul_inst[16:12], operandData[11]);
         
         
         // LOGIC ID

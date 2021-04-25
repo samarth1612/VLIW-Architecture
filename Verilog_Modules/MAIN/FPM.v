@@ -1,7 +1,7 @@
 module FPMul(input clk, input [31:0]I1, input [31:0]I2, output [31:0]out);
 
     wire [31:0] out_d, A, B, Exp, final_exp, final_exp_d, final_exp_d_d, final_exp_d_shifted, N1, N2;
-    wire S1, S2, cout;
+    wire S1, S2, cout, x;
     wire [7:0] E1, E2;
     wire [22:0] M1, M2;
     wire [63:0] P, P_d;
@@ -14,15 +14,14 @@ module FPMul(input clk, input [31:0]I1, input [31:0]I2, output [31:0]out);
     // Summing up the Exponents
     CLA CL1 (clk, Exp, cout, {24'b0, E1}, {24'b0, E2}, 1'b0); 
     CLA CL2 (clk, final_exp, cout, Exp, ~(32'd127), 1'b1);
-
-    delay #(8, 32) cd1 (clk, final_exp, final_exp_d);    
+    dff #(32) dffexp (final_exp, clk, 1'b1, final_exp_d);
+    // delay #(1, 32) cd1 (clk, final_exp, final_exp_d);    
 
     assign N1 = {|E1, M1};
     assign N2 = {|E2, M2};
 
     WallaceMul Wm (clk, N1, N2, P);
-
-    delay #(13, 64) cd2 (clk, P, P_d);
+    assign P_d = P;
 
     // A is is inf or NAN and B is not zero
     triArr T1(A, &E1 & |B[30:0], out_d);
@@ -33,11 +32,12 @@ module FPMul(input clk, input [31:0]I1, input [31:0]I2, output [31:0]out);
     // A is INF or NAN and B is zero
     triArr T3({32{1'b1}}, &E1 & ~(|B[30:0]), out_d);
 
-    delay #(25, 32) cd4 (clk, out_d, out);
+    delay #(13, 32) cd4 (clk, out_d, out);
 
     //Case of overflow(no inf/NAN/zero/Denormal)
     CLA CL3 (clk, final_exp_d_shifted, cout, final_exp_d, 32'b1, 1'b0);
-    triArr T4 ({S1^S2, final_exp_d_shifted[7:0], P_d[46:24]}, P_d[47] & ~(&E1 | ~(|B[30:0])), out);
+    assign x = P_d[47] & ~(&E1 | ~(|B[30:0]));
+    triArr T4 ({S1^S2, final_exp_d_shifted[7:0], P_d[46:24]}, 1'b1, out);
 
     //Normal Case (no inf/NAN/zero/Denormal)
     delay #(4, 32) cd3 (clk, final_exp_d, final_exp_d_d);
