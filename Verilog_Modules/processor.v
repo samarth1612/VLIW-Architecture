@@ -119,7 +119,7 @@ module processor (input clk);
     reg [31:0] a3, b3;
     wire [31:0] out3;
     FPAdder fadd0 (clk, a3, b3, out3); 
-    delay #(4, 5) delayFadd0(clk, fadd0_out, fadd0_out_d);
+    delay #(3, 5) delayFadd0(clk, fadd0_out, fadd0_out_d);
 
     /*============================================================================================
     Module instantiation for Fadd 1 instruction
@@ -127,7 +127,7 @@ module processor (input clk);
     reg [31:0] a4, b4;
     wire [31:0] out4;
     FPAdder fadd1 (clk, a4, b4, out4); 
-    delay #(4, 5) delayFadd(clk, fadd1_out, fadd1_out_d);
+    delay #(3, 5) delayFadd1(clk, fadd1_out, fadd1_out_d);
 
     /*============================================================================================
     Module instantiation for Fmul instruction

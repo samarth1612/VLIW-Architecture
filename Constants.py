@@ -1,3 +1,4 @@
+# A dictionary that holds the delays of the modules
 moduleDelay = {
     "add0": 8,
     "add1": 8,
@@ -6,11 +7,12 @@ moduleDelay = {
     "fadd1": 8,
     "fmul": 26,
     "logic": 2,
-    "ldr": 2,
-    "str": 2,
-    "mov": 2
+    "ldr": 4,
+    "str": 4,
+    "mov": 4
 }
 
+# A testbench template
 testBench = """`include "processor.v"
 
 module tb;
@@ -20,6 +22,7 @@ module tb;
     reg clk;
     integer i, j;
 
+    // Wires to hold the instructions and the delays
     wire [319:0] instructions [nInst-1:0];
     wire [31:0] index [nInst-1:0];
 
@@ -33,16 +36,19 @@ module tb;
 
     initial begin
         clk = 1'b1;
+        // Initialize the program counter, register files, memory blocks
         proc.initPC();
         proc.rf.initialize();
         proc.mem.initialize();
         proc.initInst();
+        // Write the instructions to the processor
         for (j = 0; j < nInst; j = j + 1) begin
             proc.writeInst(instructions[j], index[j]);
         end
-        #200 $finish; 
+        #{finish} $finish; 
     end
 
+    // Monitor the register files
     always @(clk) begin
         $display("{{\\n \\\"time\\\": ", $time, ",");
         for (i = 0; i < 32; i = i + 1)

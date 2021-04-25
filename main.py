@@ -15,8 +15,16 @@ if __name__ == '__main__':
             print(compiler.packets[idx])
         print()
 
+    print("Generating a testbench...\n")
     compiler.generateTestBench()
+    print("Executing a testbench...\n")
     compiler.executeTestBench()
+
     for out in compiler.outputData:
-        print(out)
+        print(f"$time: {out['time']}\t PC: {out['31']}")
+        for key, value in out.items():
+            if key in ["time", "31"]:
+                continue
+            print('\x1b[6;32;49m'+"R"+key+':\t' +
+                  '\x1b[6;34;49m'+str(value)+'\x1b[0m')
         print()

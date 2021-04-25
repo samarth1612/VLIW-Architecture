@@ -1,5 +1,5 @@
 import os
-from sys import platform
+from sys import platform, exit
 import ast
 
 from Helpers import *
@@ -26,6 +26,7 @@ class Compiler:
         A list of instructions represented as a list of data
         [opcode, outputs, inputs]
         """
+        flag = False
         with open(self.filePath, "r") as fp:
             fileData = fp.readlines()
         opCode = getOPCode()
@@ -37,10 +38,32 @@ class Compiler:
                 continue
             j = [opCode[y[0]]]
             for i in range(1, len(y), 1):
+                if y[i] in ["R0", "r0", "R31", "r31"]:
+                    print('\x1b[6;31;49m'+f"ERROR: In line {fileData.index(x)+1}, {y[i]} is a reserved register, Use a different register.\n"+'\x1b[0m')
+                    flag = True
                 j.append(y[i].upper())
             if j[0] in ["10010", "10011", "10100"]:
+                if x.find("#") == -1:
+                    print('\x1b[6;31;49m'+f"ERROR: In line {fileData.index(x)+1}, Immediate opperand is required for memory access instructions.\n"+'\x1b[0m')
+                    flag = True
+                if x.count("#") > 1:
+                    print('\x1b[6;31;49m'+f"ERROR: In line {fileData.index(x)+1}, Multiple immediate opperand is not supported.\n"+'\x1b[0m')
+                    flag = True
+                if x.find("#") != -1:
+                    if y[1][0] == "#":
+                        z = y[1]
+                    else:
+                        z = y[2]
+                    if len(bin(int(z[1:]))[2:]) > 22:
+                        print('\x1b[6;35;49m'+f"WARNING: In line {fileData.index(x)+1}, Immediate operand is larger than 22 bits, it will be truncated.\n"+'\x1b[0m')
                 j.append("R0")
+            else:
+                if x.find("#") != -1:
+                    print('\x1b[6;31;49m'+f"ERROR: In line {fileData.index(x)+1}, Immediate opperand is not supported for arithmetic and logic instructions.\n"+'\x1b[0m')
+                    flag = True
             self.data.append(j)
+        if flag:
+            exit()
 
     def __createPackets(self):
         """
@@ -129,50 +152,68 @@ class Compiler:
                                 wawDelay - sum(self.delay[predecessorIdx+1:currentIdx]), self.delay[currentIdx])
 
     def generateTestBench(self):
+        """
+        Generates a testbench for the processor verilog modules
+
+        Output: Returns a testbench (.v) file
+        """
         for it in range(1, len(self.delay)):
             self.delay[it] += self.delay[it-1]
         binPacket = []
+        # Get the binary version of the packets to be written in the test bench
         for packet in self.packets:
             binPacket.append(packetBinary(packet))
+        # Assigning the instructions to the wires in testbench
         assignInst = ""
         for it in range(len(binPacket)):
             assignInst += f"\tassign instructions[{it}] = {binPacket[it]};\n"
+        # Assigning the delays to the wires in testbench
         assignDelay = ""
         for it in range(len(binPacket)):
             assignDelay += f"\tassign index[{it}] = {self.delay[it]};\n"
-
+        # Formating the testbench variable with input instructions
         testBenchPath = f"Verilog_Modules\{self.fileName}.v"
         with open(testBenchPath, "w") as fp:
             fp.write(testBench.format(
-                nInst=len(binPacket), inst=assignInst, delay=assignDelay))
+                nInst=len(binPacket), inst=assignInst, delay=assignDelay, finish=len(binPacket)*30))
 
     def executeTestBench(self):
+        """
+        Execute the testbench for the processor verilog modules
+
+        Output: Compiles the verilog file and stores the data of the register file after performing the operations specified by the user
+        """
         os.chdir("Verilog_Modules")
+        # Compiling the verilog testbench 
         os.system(f"iverilog -o {self.fileName} {self.fileName}.v")
-        if platform == "linux" or platform == "darwin":
+        print("Generating random values for register file and memory block...\n")
+        # For Linux / MacOS systems storing the data of the register file 
+        if platform in ["linux", "darwin"]:
             os.system(f"./{self.fileName} > {self.fileName}.txt")
+        # For Windows systems storing the data of the register file 
         elif platform == "win32":
             os.system(f"vvp {self.fileName} > {self.fileName}.txt")
+        # Opening the stored output file in read mode s
         with open(f"{self.fileName}.txt", "r") as fp:
             data = fp.read()
-        times = []
+        print("Compiling the register values...\n")
         output = []
         data = data.replace(" ", "")
+        # Converting the file to the list of dictionary 
         while True:
             if data.find("}") == -1:
                 break
             else:
                 end = data.index("}")
                 timeDict = ast.literal_eval(data[:end+1])
-                if timeDict["time"] in times:
-                    output[-1] = timeDict
-                    data = data[end+1:]
-                    continue
                 output.append(timeDict)
-                times.append(timeDict["time"])
                 data = data[end+1:]
         self.outputData.append(output[0])
+        # Removing intermediate register file output
         for out in range(1, len(output)):
             for key in output[out].keys():
                 if output[out][key] != output[out-1][key] and key != "time" and key != "31":
                     self.outputData.append(output[out])
+                    break
+        os.remove(f"{self.fileName}")
+        os.remove(f"{self.fileName}.txt")
