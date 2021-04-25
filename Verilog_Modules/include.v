@@ -17,6 +17,7 @@
 `include "RESOURCES\split.v"
 `include "RESOURCES\swap.v"
 `include "RESOURCES\triArr.v"
+`include "RESOURCES\zeroInf.v"
 
 // Register file
 `include "REG FILE\RegisterFile.v"

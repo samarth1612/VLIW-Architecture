@@ -17,3 +17,6 @@ if __name__ == '__main__':
 
     compiler.generateTestBench()
     compiler.executeTestBench()
+    for out in compiler.outputData:
+        print(out)
+        print()

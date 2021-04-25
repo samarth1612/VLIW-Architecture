@@ -10,7 +10,7 @@ module memory #(
         */
         integer i;
         for (i = 0; i < size; i = i + 1) begin : memoryInit
-            mem[i] = i;
+            mem[i] = $random;
         end
     endtask
 
