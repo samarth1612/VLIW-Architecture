@@ -1,5 +1,5 @@
 import os
-from sys import platform
+from sys import platform, exit
 import ast
 
 from Helpers import *
@@ -26,6 +26,7 @@ class Compiler:
         A list of instructions represented as a list of data
         [opcode, outputs, inputs]
         """
+        flag = False
         with open(self.filePath, "r") as fp:
             fileData = fp.readlines()
         opCode = getOPCode()
@@ -37,10 +38,32 @@ class Compiler:
                 continue
             j = [opCode[y[0]]]
             for i in range(1, len(y), 1):
+                if y[i] in ["R0", "r0", "R31", "r31"]:
+                    print('\x1b[6;31;49m'+f"ERROR: In line {fileData.index(x)+1}, {y[i]} is a reserved register, Use a different register.\n"+'\x1b[0m')
+                    flag = True
                 j.append(y[i].upper())
             if j[0] in ["10010", "10011", "10100"]:
+                if x.find("#") == -1:
+                    print('\x1b[6;31;49m'+f"ERROR: In line {fileData.index(x)+1}, Immediate opperand is required for memory access instructions.\n"+'\x1b[0m')
+                    flag = True
+                if x.count("#") > 1:
+                    print('\x1b[6;31;49m'+f"ERROR: In line {fileData.index(x)+1}, Multiple immediate opperand is not supported.\n"+'\x1b[0m')
+                    flag = True
+                if x.find("#") != -1:
+                    if y[1][0] == "#":
+                        z = y[1]
+                    else:
+                        z = y[2]
+                    if len(bin(int(z[1:]))[2:]) > 22:
+                        print('\x1b[6;35;49m'+f"WARNING: In line {fileData.index(x)+1}, Immediate operand is larger than 22 bits, it will be truncated.\n"+'\x1b[0m')
                 j.append("R0")
+            else:
+                if x.find("#") != -1:
+                    print('\x1b[6;31;49m'+f"ERROR: In line {fileData.index(x)+1}, Immediate opperand is not supported for arithmetic and logic instructions.\n"+'\x1b[0m')
+                    flag = True
             self.data.append(j)
+        if flag:
+            exit()
 
     def __createPackets(self):
         """
@@ -149,12 +172,14 @@ class Compiler:
     def executeTestBench(self):
         os.chdir("Verilog_Modules")
         os.system(f"iverilog -o {self.fileName} {self.fileName}.v")
+        print("Generating random values for register file and memory block...\n")
         if platform == "linux" or platform == "darwin":
             os.system(f"./{self.fileName} > {self.fileName}.txt")
         elif platform == "win32":
             os.system(f"vvp {self.fileName} > {self.fileName}.txt")
         with open(f"{self.fileName}.txt", "r") as fp:
             data = fp.read()
+        print("Compiling the register values...\n")
         times = []
         output = []
         data = data.replace(" ", "")
@@ -164,15 +189,12 @@ class Compiler:
             else:
                 end = data.index("}")
                 timeDict = ast.literal_eval(data[:end+1])
-                if timeDict["time"] in times:
-                    output[-1] = timeDict
-                    data = data[end+1:]
-                    continue
                 output.append(timeDict)
-                times.append(timeDict["time"])
                 data = data[end+1:]
         self.outputData.append(output[0])
+
         for out in range(1, len(output)):
             for key in output[out].keys():
                 if output[out][key] != output[out-1][key] and key != "time" and key != "31":
                     self.outputData.append(output[out])
+                    break
