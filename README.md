@@ -13,6 +13,9 @@ The VLIW processor contains the following modules:
 
 Instruction format is given in instructions.txt.
 
+## Demo
+![Demo of execution of Test_Cases\demo_1.ss](https://github.com/thegamingbot/VLIW-Architecture/demo_1.gif)
+
 ## Contributions
 | Roll No.  |           Name            |        Email ID        |
 | :-------: | :-----------------------: | :--------------------: |
