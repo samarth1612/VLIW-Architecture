@@ -14,10 +14,10 @@ The VLIW processor contains the following modules:
 Instruction format is given in instructions.txt.
 
 ## Contributions
-| Roll No.  |           Name            |
-| :-------: | :-----------------------: |
-| CED18I044 |  Sai Kaushik Sudhakaran   |
-| CED18I045 | Samarth Sudarshan Inamdar |
+| Roll No.  |           Name            |        Email ID        |
+| :-------: | :-----------------------: | :--------------------: |
+| CED18I044 |  Sai Kaushik Sudhakaran   | ced18i044@iiitdm.ac.in |
+| CED18I045 | Samarth Sudarshan Inamdar | ced18i045@iiitdm.ac.in |
 
 ## Usage
 - For UNIX users
